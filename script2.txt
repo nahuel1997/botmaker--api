@@ -1,0 +1,91 @@
+const main = async() => {
+  const API_BASE_URL = 'https://api2.alleata.com.ar/api';
+  const API_KEY = 'botmaker_alleata_2025';
+  const headers = {
+    'x-api-key': API_KEY,
+    'Content-Type': 'application/json',
+  };
+  const sucursalId   = user.get('sucursal_id_seleccionada');
+  const cuentaMadreId = user.get('sucursales_cuenta_id');
+
+  // ─── DETALLE SUCURSAL ─────────────────────────────────────────
+  const resSucursal = await fetch(`${API_BASE_URL}/sucursal?id=${encodeURIComponent(sucursalId)}`, { method: 'GET', headers });
+  const dataSucursal = await resSucursal.json();
+  if (dataSucursal.ok) {
+    user.set('sucursal_texto',    dataSucursal.textoBotmaker);
+    user.set('sucursal_nombre',   dataSucursal.sucursal.nombre);
+    user.set('sucursal_telefono', dataSucursal.sucursal.telefono);
+    user.set('sucursal_error',    '');
+  } else {
+    user.set('sucursal_error', dataSucursal.error || 'Error desconocido.');
+  }
+
+  // ─── CREDENCIALES ─────────────────────────────────────────────
+  const resCredenciales = await fetch(`${API_BASE_URL}/credenciales?cuentaId=${encodeURIComponent(sucursalId)}`, { method: 'GET', headers });
+  const dataCredenciales = await resCredenciales.json();
+  if (dataCredenciales.ok) {
+    user.set('credenciales_texto',             dataCredenciales.textoBotmaker);
+    user.set('credenciales_usuario_cajero',    dataCredenciales.credenciales.usuarioCajero);
+    user.set('credenciales_contrasena_cajero', dataCredenciales.credenciales.contrasenaCajero);
+    user.set('credenciales_usuario_dash',      dataCredenciales.credenciales.usuarioDashPanel);
+    user.set('credenciales_contrasena_dash',   dataCredenciales.credenciales.contrasenaDashPanel);
+    user.set('credenciales_mail',              dataCredenciales.credenciales.mail);
+    user.set('credenciales_banco',             dataCredenciales.credenciales.bancoPagador);
+    user.set('credenciales_error',             '');
+  } else {
+    user.set('credenciales_error', dataCredenciales.error || 'Error desconocido.');
+  }
+
+  // ─── ORDENES ──────────────────────────────────────────────────
+  const resOrdenes = await fetch(`${API_BASE_URL}/ordenes?cuentaId=${encodeURIComponent(sucursalId)}`, { method: 'GET', headers });
+  const dataOrdenes = await resOrdenes.json();
+  if (dataOrdenes.ok) {
+    user.set('ordenes_texto', dataOrdenes.textoBotmaker);
+    user.set('ordenes_total', String(dataOrdenes.total));
+    user.set('ordenes_error', '');
+  } else {
+    user.set('ordenes_error', dataOrdenes.error || 'Error desconocido.');
+  }
+
+  // ─── ESTABLECIMIENTOS ─────────────────────────────────────────
+  const resEstablecimientos = await fetch(`${API_BASE_URL}/establecimientos?cuentaId=${encodeURIComponent(sucursalId)}`, { method: 'GET', headers });
+  const dataEstablecimientos = await resEstablecimientos.json();
+  if (dataEstablecimientos.ok) {
+    user.set('establecimientos_texto', dataEstablecimientos.textoBotmaker);
+    user.set('establecimientos_total', String(dataEstablecimientos.total));
+    user.set('establecimientos_error', '');
+  } else {
+    user.set('establecimientos_error', dataEstablecimientos.error || 'Error desconocido.');
+  }
+
+  // ─── ESTADO FINANCIERO (cuenta madre) ─────────────────────────
+  const resFinanciero = await fetch(`${API_BASE_URL}/estado-financiero?cuentaId=${encodeURIComponent(cuentaMadreId)}`, { method: 'GET', headers });
+  const dataFinanciero = await resFinanciero.json();
+  if (dataFinanciero.ok) {
+    user.set('financiero_texto',   dataFinanciero.textoBotmaker);
+    user.set('financiero_plan_pp', dataFinanciero.estadoFinanciero.planPP);
+    user.set('financiero_importe', String(dataFinanciero.estadoFinanciero.importePP));
+    user.set('financiero_error',   '');
+  } else {
+    user.set('financiero_error', dataFinanciero.error || 'Error desconocido.');
+  }
+
+  // ─── PRODUCTOS ────────────────────────────────────────────────
+  const resProductos = await fetch(`${API_BASE_URL}/productos?cuentaId=${encodeURIComponent(sucursalId)}`, { method: 'GET', headers });
+  const dataProductos = await resProductos.json();
+  if (dataProductos.ok) {
+    user.set('productos_texto', dataProductos.textoBotmaker);
+    user.set('productos_total', String(dataProductos.total));
+    user.set('productos_error', '');
+  } else {
+    user.set('productos_error', dataProductos.error || 'Error desconocido.');
+  }
+
+};
+main()
+  .catch(err => {
+    const errorMessage = `[User Basic Template] Error - ${context.userData._id_} - ${err.message}`;
+    user.set('ca_error', errorMessage);
+    bmconsole.log(errorMessage);
+  })
+  .finally(result.done);

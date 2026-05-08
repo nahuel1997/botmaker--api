@@ -1,0 +1,33 @@
+const main = async() => {
+  const API_BASE_URL = 'https://api2.alleata.com.ar/api';
+  const API_KEY = 'botmaker_alleata_2025';
+  const response = await fetch(`${API_BASE_URL}/leads`, {
+    method: 'POST',
+    headers: {
+      'x-api-key': API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      nombre:   user.get('lead_nombre'),
+      mail:     user.get('lead_mail'),
+      telefono: user.get('lead_telefono'),
+      cuit:     user.get('Cuit2') || '',
+    }),
+  });
+  const data = await response.json();
+  if (!data.ok) {
+    user.set('lead_error', data.error || 'Error desconocido.');
+    user.set('lead_texto', data.textoBotmaker || '❌ No pudimos registrar tus datos.');
+    return;
+  }
+  user.set('lead_texto', data.textoBotmaker);
+  user.set('lead_id',    data.leadId);
+  user.set('lead_error', '');
+};
+main()
+  .catch(err => {
+    const errorMessage = `[User Basic Template] Error - ${context.userData._id_} - ${err.message}`;
+    user.set('ca_error', errorMessage);
+    bmconsole.log(errorMessage);
+  })
+  .finally(result.done);

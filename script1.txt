@@ -1,0 +1,32 @@
+const main = async() => {
+  const API_BASE_URL = 'https://api2.alleata.com.ar/api';
+  const API_KEY = 'botmaker_alleata_2025';
+  const cuit = user.get('Cuit2') || '';
+  const response = await fetch(`${API_BASE_URL}/sucursales?cuit=${encodeURIComponent(cuit)}`, {
+    method: 'GET',
+    headers: {
+      'x-api-key': API_KEY,
+      'Content-Type': 'application/json',
+    },
+  });
+  const data = await response.json();
+  if (!data.ok) {
+    user.set('sucursales_error', data.error || 'Error desconocido.');
+    user.set('sucursales_texto', data.textoBotmaker || '❌ No encontramos información para ese CUIT.');
+    return;
+  }
+  user.set('sucursales_texto',         data.textoBotmaker);
+  user.set('sucursales_total',         String(data.total));
+  user.set('sucursales_cuenta_id',     data.cuentaMadre.id);
+  user.set('sucursales_cuenta_nombre', data.cuentaMadre.nombre);
+  const ids = data.sucursales.map(function(s) { return s.id; }).join(',');
+  user.set('sucursales_ids',  ids);
+  user.set('sucursales_error', '');
+};
+main()
+  .catch(err => {
+    const errorMessage = `[User Basic Template] Error - ${context.userData._id_} - ${err.message}`;
+    user.set('ca_error', errorMessage);
+    bmconsole.log(errorMessage);
+  })
+  .finally(result.done);
