@@ -43,7 +43,7 @@ function formatearDetalleParaBotmaker(sucursal) {
     `🏢 *${sucursal.nombre}*\n\n` +
     (domicilio ? `📍 Domicilio: ${domicilio}\n` : '') +
     (sucursal.telefono ? `📞 Teléfono: ${sucursal.telefono}\n` : '') +
-    (sucursal.website ? `🌐 Web: ${sucursal.website}\n` : '') +
+(sucursal.website ? `🌐 Web: ${sucursal.website}\n` : '') +
     (sucursal.descripcion ? `\n${sucursal.descripcion}` : '')
   ).trim();
 }
