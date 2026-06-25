@@ -7,8 +7,10 @@ let conn = null;
 
 async function getConnection() {
   if (conn && conn.accessToken) {
+    console.log(`[Salesforce] Reutilizando sesión existente`);
     return conn;
   }
+  console.log(`[Salesforce] Iniciando login con usuario: ${process.env.SF_USERNAME}`);
   conn = new jsforce.Connection({
     loginUrl: process.env.SF_LOGIN_URL || 'https://login.salesforce.com',
   });
@@ -30,6 +32,7 @@ async function getSucursalesByCuit(cuit) {
   const cuitSoql = `${cuitNormalizado}.0`;
 
   console.log(`[Salesforce] Buscando CUIT: ${cuitNormalizado} → SOQL: ${cuitSoql}`);
+  console.log(`[Salesforce] Ejecutando query cuenta madre...`);
 
   const madreResult = await sf.query(
     `SELECT Id, Name, ${cuitField}, Phone, BillingCity, BillingState
@@ -39,11 +42,16 @@ async function getSucursalesByCuit(cuit) {
      LIMIT 1`
   );
 
+  console.log(`[Salesforce] Query cuenta madre OK — totalSize: ${madreResult.totalSize}`);
+
   if (madreResult.totalSize === 0) {
+    console.log(`[Salesforce] No se encontró cuenta madre con CUIT ${cuitSoql}`);
     return null;
   }
 
   const cuentaMadre = madreResult.records[0];
+  console.log(`[Salesforce] Cuenta madre: ${cuentaMadre.Name} (${cuentaMadre.Id})`);
+  console.log(`[Salesforce] Ejecutando query sucursales...`);
 
   const sucursalesResult = await sf.query(
     `SELECT Id, Name, Phone, BillingStreet, BillingCity, BillingState,
@@ -52,6 +60,8 @@ async function getSucursalesByCuit(cuit) {
      WHERE ParentId = '${cuentaMadre.Id}'
      ORDER BY Name ASC`
   );
+
+  console.log(`[Salesforce] Query sucursales OK — total: ${sucursalesResult.totalSize}`);
 
   return {
     cuentaMadre: {
