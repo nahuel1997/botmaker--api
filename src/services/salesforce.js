@@ -31,37 +31,29 @@ async function getSucursalesByCuit(cuit) {
   const cuitNormalizado = cuit.replace(/\D/g, '').trim();
   const cuitSoql = `${cuitNormalizado}.0`;
 
-  console.log(`[Salesforce] Buscando CUIT: ${cuitNormalizado} → SOQL: ${cuitSoql}`);
-  console.log(`[Salesforce] Ejecutando query cuenta madre...`);
+  console.log(`[Salesforce] Buscando CUIT: ${cuitNormalizado}`);
+  console.log(`[Salesforce] Ejecutando query cuenta madre via REST...`);
 
-  const madreResult = await sf.query(
-    `SELECT Id, Name, ${cuitField}, Phone, BillingCity, BillingState
-     FROM Account
-     WHERE ${cuitField} = ${cuitSoql}
-       AND ParentId = null
-     LIMIT 1`
-  );
+  const soql = `SELECT Id, Name, ${cuitField}, Phone, BillingCity, BillingState FROM Account WHERE ${cuitField} = ${cuitSoql} AND ParentId = null LIMIT 1`;
+  const encoded = encodeURIComponent(soql);
+  const madreRes = await sf.request(`/services/data/v58.0/query?q=${encoded}`);
 
-  console.log(`[Salesforce] Query cuenta madre OK — totalSize: ${madreResult.totalSize}`);
+  console.log(`[Salesforce] Query cuenta madre OK — totalSize: ${madreRes.totalSize}`);
 
-  if (madreResult.totalSize === 0) {
+  if (madreRes.totalSize === 0) {
     console.log(`[Salesforce] No se encontró cuenta madre con CUIT ${cuitSoql}`);
     return null;
   }
 
-  const cuentaMadre = madreResult.records[0];
+  const cuentaMadre = madreRes.records[0];
   console.log(`[Salesforce] Cuenta madre: ${cuentaMadre.Name} (${cuentaMadre.Id})`);
-  console.log(`[Salesforce] Ejecutando query sucursales...`);
+  console.log(`[Salesforce] Ejecutando query sucursales via REST...`);
 
-  const sucursalesResult = await sf.query(
-    `SELECT Id, Name, Phone, BillingStreet, BillingCity, BillingState,
-            BillingPostalCode, BillingCountry
-     FROM Account
-     WHERE ParentId = '${cuentaMadre.Id}'
-     ORDER BY Name ASC`
-  );
+  const soql2 = `SELECT Id, Name, Phone, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry FROM Account WHERE ParentId = '${cuentaMadre.Id}' ORDER BY Name ASC`;
+  const encoded2 = encodeURIComponent(soql2);
+  const sucursalesRes = await sf.request(`/services/data/v58.0/query?q=${encoded2}`);
 
-  console.log(`[Salesforce] Query sucursales OK — total: ${sucursalesResult.totalSize}`);
+  console.log(`[Salesforce] Query sucursales OK — total: ${sucursalesRes.totalSize}`);
 
   return {
     cuentaMadre: {
@@ -69,7 +61,7 @@ async function getSucursalesByCuit(cuit) {
       nombre: cuentaMadre.Name,
       cuit: cuentaMadre[cuitField],
     },
-    sucursales: sucursalesResult.records.map((s) => ({
+    sucursales: sucursalesRes.records.map((s) => ({
       id: s.Id,
       nombre: s.Name,
       ciudad: s.BillingCity || '',
@@ -85,7 +77,7 @@ async function getSucursalById(id) {
     `SELECT Id, Name, Phone, Website,
             BillingStreet, BillingCity, BillingState,
             BillingPostalCode, BillingCountry,
-            Description,
+            Description, Responsable_de_la_cuenta_c,
             Parent.Name, Parent.Id
      FROM Account
      WHERE Id = '${id}'
@@ -111,6 +103,7 @@ async function getSucursalById(id) {
       pais: s.BillingCountry || '',
     },
     descripcion: s.Description || '',
+    responsableCuenta: s.Responsable_de_la_cuenta_c || '',
     cuentaMadre: s.Parent
       ? { id: s.Parent.Id, nombre: s.Parent.Name }
       : null,
@@ -209,7 +202,6 @@ async function getEstablecimientosByCuentaId(cuentaId) {
 async function getEstadoFinancieroByCuentaId(cuentaId) {
   const sf = await getConnection();
 
-  // Buscamos el contrato vinculado desde RPN_Vol_Tot_Matriz__c
   const volResult = await sf.query(
     `SELECT Id, RPN_Contract_EstadoFinanciero__c
      FROM RPN_Vol_Tot_Matriz__c
@@ -250,8 +242,6 @@ async function getEstadoFinancieroByCuentaId(cuentaId) {
 async function getProductosByCuentaId(cuentaId) {
   const sf = await getConnection();
 
-  // Reemplazá 'Product2' o el objeto custom correspondiente según tu org
-  // El Excel indica que el objeto es "Productos" y el campo es "Name"
   const result = await sf.query(
     `SELECT Id, Name
      FROM Asset

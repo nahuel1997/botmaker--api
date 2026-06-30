@@ -43,7 +43,8 @@ function formatearDetalleParaBotmaker(sucursal) {
     `🏢 *${sucursal.nombre}*\n\n` +
     (domicilio ? `📍 Domicilio: ${domicilio}\n` : '') +
     (sucursal.telefono ? `📞 Teléfono: ${sucursal.telefono}\n` : '') +
-(sucursal.website ? `🌐 Web: ${sucursal.website}\n` : '') +
+    (sucursal.website ? `🌐 Web: ${sucursal.website}\n` : '') +
+    (sucursal.responsableCuenta ? `👤 Responsable: ${sucursal.responsableCuenta}\n` : '') +
     (sucursal.descripcion ? `\n${sucursal.descripcion}` : '')
   ).trim();
 }
@@ -333,6 +334,5 @@ router.post('/leads', async (req, res) => {
     });
   }
 });
-
 
 module.exports = router;

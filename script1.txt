@@ -1,7 +1,7 @@
 const main = async() => {
   const API_BASE_URL = 'https://api2.alleata.com.ar/api';
   const API_KEY = 'botmaker_alleata_2025';
-  const cuit = user.get('Cuit2') || '';
+  const cuit = user.get('Cuit2') || '30615773383';
   const response = await fetch(`${API_BASE_URL}/sucursales?cuit=${encodeURIComponent(cuit)}`, {
     method: 'GET',
     headers: {
