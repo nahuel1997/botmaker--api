@@ -7,10 +7,8 @@ let conn = null;
 
 async function getConnection() {
   if (conn && conn.accessToken) {
-    console.log(`[Salesforce] Reutilizando sesión existente`);
     return conn;
   }
-  console.log(`[Salesforce] Iniciando login con usuario: ${process.env.SF_USERNAME}`);
   conn = new jsforce.Connection({
     loginUrl: process.env.SF_LOGIN_URL || 'https://login.salesforce.com',
   });
@@ -31,29 +29,29 @@ async function getSucursalesByCuit(cuit) {
   const cuitNormalizado = cuit.replace(/\D/g, '').trim();
   const cuitSoql = `${cuitNormalizado}.0`;
 
-  console.log(`[Salesforce] Buscando CUIT: ${cuitNormalizado}`);
-  console.log(`[Salesforce] Ejecutando query cuenta madre via REST...`);
+  console.log(`[Salesforce] Buscando CUIT: ${cuitNormalizado} → SOQL: ${cuitSoql}`);
 
-  const soql = `SELECT Id, Name, ${cuitField}, Phone, BillingCity, BillingState FROM Account WHERE ${cuitField} = ${cuitSoql} AND ParentId = null LIMIT 1`;
-  const encoded = encodeURIComponent(soql);
-  const madreRes = await sf.request(`/services/data/v58.0/query?q=${encoded}`);
+  const madreResult = await sf.query(
+    `SELECT Id, Name, ${cuitField}, Phone, BillingCity, BillingState
+     FROM Account
+     WHERE ${cuitField} = ${cuitSoql}
+       AND ParentId = null
+     LIMIT 1`
+  );
 
-  console.log(`[Salesforce] Query cuenta madre OK — totalSize: ${madreRes.totalSize}`);
-
-  if (madreRes.totalSize === 0) {
-    console.log(`[Salesforce] No se encontró cuenta madre con CUIT ${cuitSoql}`);
+  if (madreResult.totalSize === 0) {
     return null;
   }
 
-  const cuentaMadre = madreRes.records[0];
-  console.log(`[Salesforce] Cuenta madre: ${cuentaMadre.Name} (${cuentaMadre.Id})`);
-  console.log(`[Salesforce] Ejecutando query sucursales via REST...`);
+  const cuentaMadre = madreResult.records[0];
 
-  const soql2 = `SELECT Id, Name, Phone, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry FROM Account WHERE ParentId = '${cuentaMadre.Id}' ORDER BY Name ASC`;
-  const encoded2 = encodeURIComponent(soql2);
-  const sucursalesRes = await sf.request(`/services/data/v58.0/query?q=${encoded2}`);
-
-  console.log(`[Salesforce] Query sucursales OK — total: ${sucursalesRes.totalSize}`);
+  const sucursalesResult = await sf.query(
+    `SELECT Id, Name, Phone, BillingStreet, BillingCity, BillingState,
+            BillingPostalCode, BillingCountry
+     FROM Account
+     WHERE ParentId = '${cuentaMadre.Id}'
+     ORDER BY Name ASC`
+  );
 
   return {
     cuentaMadre: {
@@ -61,7 +59,7 @@ async function getSucursalesByCuit(cuit) {
       nombre: cuentaMadre.Name,
       cuit: cuentaMadre[cuitField],
     },
-    sucursales: sucursalesRes.records.map((s) => ({
+    sucursales: sucursalesResult.records.map((s) => ({
       id: s.Id,
       nombre: s.Name,
       ciudad: s.BillingCity || '',
@@ -77,7 +75,7 @@ async function getSucursalById(id) {
     `SELECT Id, Name, Phone, Website,
             BillingStreet, BillingCity, BillingState,
             BillingPostalCode, BillingCountry,
-            Description, Responsable_de_la_cuenta_c,
+            Description,
             Parent.Name, Parent.Id
      FROM Account
      WHERE Id = '${id}'
@@ -103,7 +101,6 @@ async function getSucursalById(id) {
       pais: s.BillingCountry || '',
     },
     descripcion: s.Description || '',
-    responsableCuenta: s.Responsable_de_la_cuenta_c || '',
     cuentaMadre: s.Parent
       ? { id: s.Parent.Id, nombre: s.Parent.Name }
       : null,
