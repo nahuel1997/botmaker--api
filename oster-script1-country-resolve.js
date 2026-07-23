@@ -2,7 +2,9 @@ const main = async () => {
   const API_BASE_URL = 'https://api.procare-latam.com/v1/bot/api';
   const API_KEY = 'pk_procare_OIYhc7lou7AL9tHk2SMPSMgiB0VwdIL44YIkzLPFhC8';
 
-  const phone = user.get('oster_phone') || context.userData.phone;
+  const rawPhone = user.get('oster_phone') || context.userData.phone || '';
+  // La API requiere formato E.164 con + al inicio
+  const phone = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`;
 
   const response = await fetch(`${API_BASE_URL}/country-resolve?phone=${encodeURIComponent(phone)}`, {
     method: 'GET',

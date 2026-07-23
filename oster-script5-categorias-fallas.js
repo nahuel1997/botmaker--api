@@ -42,7 +42,7 @@ const main = async () => {
   user.set('oster_fallas_json', JSON.stringify(fallas));
 
   const textoFallas = fallas
-    .map((f, i) => `${i + 1}. ${f.denominacion || f.nombre || f.name}`)
+    .map((f, i) => `${i + 1}. ${f.descripcion}`)
     .join('\n');
   user.set('oster_fallas_texto', textoFallas || 'No hay fallas disponibles para esta categoría.');
   user.set('oster_fallas_error', '');

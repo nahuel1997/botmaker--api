@@ -2,8 +2,9 @@ const main = async () => {
   const API_BASE_URL = 'https://api.procare-latam.com/v1/bot/api';
   const API_KEY = 'pk_procare_OIYhc7lou7AL9tHk2SMPSMgiB0VwdIL44YIkzLPFhC8';
 
-  const phone  = user.get('oster_phone') || context.userData.phone;
-  const paiId  = user.get('oster_pai_id') || '';
+  const rawPhone = user.get('oster_phone') || context.userData.phone || '';
+  const phone    = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`;
+  const paiId    = user.get('oster_pai_id') || '';
 
   let url = `${API_BASE_URL}/cases?phone=${encodeURIComponent(phone)}`;
   if (paiId) url += `&paiId=${encodeURIComponent(paiId)}`;
