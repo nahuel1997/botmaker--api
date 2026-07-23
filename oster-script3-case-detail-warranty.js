@@ -16,10 +16,11 @@ const main = async () => {
   }
 
   const caso = await resCaso.json();
-  user.set('oster_case_estado',     caso.estado      || '');
-  user.set('oster_case_sub_estado', caso.subEstado   || '');
-  user.set('oster_case_producto',   caso.producto    || '');
-  user.set('oster_case_cli_id',     String(caso.cliId || ''));
+  user.set('oster_case_estado',     caso.estado         || '');
+  user.set('oster_case_sub_estado', caso.subEstado      || '');
+  user.set('oster_case_producto',   caso.productoModelo || '');
+  user.set('oster_case_cli_id',     String(caso.cliId   || ''));
+  user.set('oster_case_cliente',    caso.clienteNombre  || '');
   user.set('oster_case_error',      '');
 
   // Garantía

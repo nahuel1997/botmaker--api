@@ -44,11 +44,11 @@ const main = async () => {
   }
 
   const data = await response.json();
-  user.set('oster_new_case_id',    String(data.odsId || data.id || ''));
+  user.set('oster_new_case_id',    String(data.caseId || data.odsId || ''));
   user.set('oster_new_case_estado', data.estado || 'NUEVO');
   user.set('oster_create_case_error', '');
   user.set('oster_create_case_texto',
-    `✅ Tu caso fue creado exitosamente.\n📋 Número de caso: *${data.odsId || data.id}*\n📌 Estado: ${data.estado || 'NUEVO'}`
+    `✅ Tu caso fue creado exitosamente.\n📋 Número de caso: *${data.caseId || data.odsId}*\n📌 Estado: ${data.estado || 'NUEVO'}`
   );
 };
 

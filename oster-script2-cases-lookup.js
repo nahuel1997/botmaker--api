@@ -43,8 +43,9 @@ const main = async () => {
   // Si hay casos, guardar el primer caso disponible como referencia rápida
   if (data.groups && data.groups.length > 0 && data.groups[0].cases.length > 0) {
     const primerCaso = data.groups[0].cases[0];
-    user.set('oster_first_case_id',     String(primerCaso.odsId || primerCaso.id || ''));
+    user.set('oster_first_case_id',     String(primerCaso.caseId || ''));
     user.set('oster_first_case_estado', primerCaso.estado || '');
+    user.set('oster_case_cli_id',       String(primerCaso.cliId || ''));
   }
 
   user.set('oster_cases_error', '');
